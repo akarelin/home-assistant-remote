@@ -31,6 +31,8 @@ CONF_ACCESS_TOKEN = 'access_token'
 CONF_API_PASSWORD = 'api_password'
 CONF_SUBSCRIBE_EVENTS = 'subscribe_events'
 CONF_ENTITY_PREFIX = 'entity_prefix'
+CONF_INCLUDE_ENTITIES = 'include'
+CONF_EXCLUDE_ENTITIES = 'exclude'
 
 DOMAIN = 'remote_homeassistant'
 
@@ -47,6 +49,8 @@ INSTANCES_SCHEMA = vol.Schema({
     vol.Optional(CONF_SUBSCRIBE_EVENTS,
                  default=DEFAULT_SUBSCRIBED_EVENTS): cv.ensure_list,
     vol.Optional(CONF_ENTITY_PREFIX, default=DEFAULT_ENTITY_PREFIX): cv.string,
+    vol.Optional(CONF_INCLUDE_ENTITIES): cv.ensure_list,
+    vol.Optional(CONF_EXCLUDE_ENTITIES): cv.ensure_list,
 })
 
 CONFIG_SCHEMA = vol.Schema({
@@ -81,6 +85,8 @@ class RemoteConnection(object):
         self._password = conf.get(CONF_API_PASSWORD)
         self._subscribe_events = conf.get(CONF_SUBSCRIBE_EVENTS)
         self._entity_prefix = conf.get(CONF_ENTITY_PREFIX)
+        self._include_entities = conf.get(CONF_INCLUDE_ENTITIES)
+        self._exclude_entities = conf.get(CONF_EXCLUDE_ENTITIES)
 
         self._connection = None
         self._entities = set()
@@ -266,6 +272,13 @@ class RemoteConnection(object):
 
         def state_changed(entity_id, state, attr):
             """Publish remote state change on local instance."""
+            if self._include_entities:
+                if entity_id not in self._include_entities:
+                    return
+            if self._exclude_entities:
+                if entity_id in self._exclude_entities:
+                    return
+
             if self._entity_prefix:
                 domain, object_id = split_entity_id(entity_id)
                 object_id = self._entity_prefix + object_id
