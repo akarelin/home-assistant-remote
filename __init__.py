@@ -275,8 +275,9 @@ class RemoteConnection(object):
             if self._include_entities:
                 if entity_id not in self._include_entities:
                     return
-            if entity_id in self._exclude_entities:
-                return
+            if self._exclude_entities:
+                if entity_id in self._exclude_entities:
+                    return
 
             if self._entity_prefix:
                 domain, object_id = split_entity_id(entity_id)
